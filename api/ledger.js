@@ -109,16 +109,29 @@ async function answerQuestion(input) {
     return winner ? winner[0] : null;
   }
 
+  const asksAverage = /\b(?:average|avg|mean)\b/.test(lower);
+  const asksUnits = /\b(?:units?|quantity|qty)\b/.test(lower);
+  if (asksAverage) {
+    if (asksUnits) {
+      return orders.length
+        ? Number((orders.reduce((sum, order) => sum + order.qty, 0) / orders.length).toFixed(2))
+        : 0;
+    }
+    return orders.length
+      ? Number((orders.reduce((sum, order) => sum + usd(order), 0) / orders.length).toFixed(2))
+      : 0;
+  }
+
   const asksCount = /\b(?:how many|count|number of)\b/.test(lower);
   if (asksCount && /\bcustomers?\b/.test(lower)) {
     return new Set(orders.map((order) => order.customer)).size;
   }
-  if (asksCount) return orders.length;
-  if (/\b(?:units?|quantity|qty)\b/.test(lower)) {
+  if (asksCount && asksUnits) {
     return orders.reduce((sum, order) => sum + order.qty, 0);
   }
-  if (/\b(?:average|avg|mean)\b/.test(lower)) {
-    return orders.length ? Number((orders.reduce((sum, order) => sum + usd(order), 0) / orders.length).toFixed(2)) : 0;
+  if (asksCount) return orders.length;
+  if (asksUnits) {
+    return orders.reduce((sum, order) => sum + order.qty, 0);
   }
   if (/\b(?:rate|percentage|percent|share)\b/.test(lower) && /refund/i.test(question)) {
     const all = (await loadOrders()).filter((order) => order.status !== "void");
