@@ -109,7 +109,11 @@ async function answerQuestion(input) {
     return winner ? winner[0] : null;
   }
 
-  if (/\b(?:how many|count|number of)\b/.test(lower)) return orders.length;
+  const asksCount = /\b(?:how many|count|number of)\b/.test(lower);
+  if (asksCount && /\bcustomers?\b/.test(lower)) {
+    return new Set(orders.map((order) => order.customer)).size;
+  }
+  if (asksCount) return orders.length;
   if (/\b(?:units?|quantity|qty)\b/.test(lower)) {
     return orders.reduce((sum, order) => sum + order.qty, 0);
   }
@@ -158,3 +162,4 @@ export default async function handler(req, res) {
     return res.end(JSON.stringify({ error: error.message }));
   }
 }
+
